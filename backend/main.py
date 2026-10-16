@@ -210,3 +210,12 @@ app.mount("/test-images", StaticFiles(directory=TEST_IMAGES_DIR), name="test_ima
 # La raiz sirve el front-end completo (html=True hace que "/" devuelva index.html).
 # Se monta al final para que no tape las rutas /api/* y /cards/*.
 app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+
+
+if __name__ == "__main__":
+    import os
+    import uvicorn
+
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=port)
+
