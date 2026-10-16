@@ -1,0 +1,33 @@
+# ==============================================================================
+# Entorno Python & Caches
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.ipynb_checkpoints/
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# ==============================================================================
+# Material de Presentación, Guías de Estudio y Pautas de Evaluación
+# ==============================================================================
+presentacion/
+GUIA_CONCEPTOS_REDES_NEURONALES.md
+guia_defensa_preguntas_ppt.md
+pautas evaluación.pdf
+*pautas*.pdf
+*guia*.md
+!README.md
+
+# ==============================================================================
+# Archivos del Sistema Operativo & IDEs
+# ==============================================================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

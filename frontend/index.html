@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reconocedor de Cartas Yu-Gi-Oh!</title>
+  <title>Yu-Gi-Oh! Card Scanner &mdash; Red Siamesa + Embeddings</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header>
     <h1><span class="accent">Yu-Gi-Oh!</span> Card Scanner</h1>
     <p class="subtitle">
-      Red siamesa + Triplet Loss &mdash; identifica una carta por similitud de embeddings
+      Red siamesa + Triplet Loss &mdash; Detección en tiempo real &amp; calibración de embeddings
     </p>
   </header>
 
@@ -22,7 +22,8 @@
       <!-- Pestanas para elegir el modo de entrada -->
       <div class="tabs">
         <button id="tab-upload" class="tab active">Subir foto</button>
-        <button id="tab-camera" class="tab">Usar c&aacute;mara</button>
+        <button id="tab-camera" class="tab">Carta Individual</button>
+        <button id="tab-multi" class="tab">&#127183; Mesa Completa</button>
       </div>
 
       <!-- Modo archivo: input file oculto + zona de arrastre clickeable -->
@@ -34,39 +35,173 @@
         <input type="file" id="file-input" accept="image/*" hidden />
       </div>
 
-      <!-- Modo camara: video en vivo + guia de encuadre + boton de captura -->
+      <!-- Modo camara: video en vivo + guia de encuadre + real-time loop -->
       <div id="camera-mode" hidden>
-        <div id="camera-wrap">
-          <video id="video" autoplay playsinline></video>
-          <!-- Marco con relacion de aspecto de carta (~268/391): alinea la foto
-               con los scans de la galeria y reduce el fondo de mesa. -->
-          <div id="card-guide" aria-hidden="true"></div>
+        <!-- Barra de controles y estado de deteccion en tiempo real -->
+        <div class="camera-controls-bar">
+          <label class="switch-wrap" for="auto-detect-toggle">
+            <input type="checkbox" id="auto-detect-toggle" checked />
+            <span class="slider"></span>
+            <span class="switch-label">Detección en tiempo real</span>
+          </label>
+          <div id="detection-indicator" class="detection-badge idle">
+            <span class="dot"></span>
+            <span id="detection-indicator-text">Iniciando cámara...</span>
+          </div>
         </div>
-        <p class="hint">Coloca la carta dentro del marco dorado y captura.</p>
-        <button id="capture-btn" class="primary">Capturar carta</button>
-        <!-- canvas invisible donde se congela (y recorta) el frame capturado -->
+
+        <div id="camera-wrap">
+          <video id="video" autoplay playsinline muted></video>
+          <!-- Marco con relacion de aspecto de carta (~268/391) + laser de escaneo -->
+          <div id="card-guide" aria-hidden="true">
+            <div class="scanner-laser"></div>
+          </div>
+        </div>
+
+        <p class="hint">Colocá la carta dentro del marco. La captura y reconocimiento se realizan automáticamente.</p>
+
+        <div class="camera-actions">
+          <button id="resume-scan-btn" class="primary" hidden>&#x21bb; Reanudar escaneo en vivo</button>
+          <button id="capture-btn" class="secondary">Captura manual</button>
+        </div>
+
+        <!-- Canvas oculto donde se congelan y recortan los frames -->
         <canvas id="canvas" hidden></canvas>
       </div>
 
-      <!-- Vista previa de la imagen elegida/capturada -->
+      <!-- Modo Mesa Completa: toda la camara sin marco fijo, deteccion y recorte automatico -->
+      <div id="multi-mode" hidden>
+        <div class="camera-controls-bar">
+          <label class="switch-wrap" for="multi-auto-toggle">
+            <input type="checkbox" id="multi-auto-toggle" />
+            <span class="slider"></span>
+            <span class="switch-label">Escaneo continuo (~1.5s)</span>
+          </label>
+          <div id="multi-detection-indicator" class="detection-badge idle">
+            <span class="dot"></span>
+            <span id="multi-detection-text">Cámara en espera...</span>
+          </div>
+        </div>
+
+        <div id="multi-camera-wrap" class="multi-camera-wrap">
+          <video id="multi-video" autoplay playsinline muted></video>
+          <canvas id="multi-overlay-canvas"></canvas>
+          <div id="multi-scan-laser" class="multi-scan-laser" hidden></div>
+        </div>
+
+        <p class="hint">Mostrá la mesa o tapete con una o varias cartas. El detector localizará cada una, corregirá la perspectiva y listará solo las cartas reconocidas.</p>
+
+        <div class="camera-actions">
+          <button id="multi-scan-btn" class="primary">&#x1F50D; Escanear mesa ahora</button>
+          <button id="multi-upload-btn" class="secondary">&#128194; Subir foto de mesa</button>
+          <input type="file" id="multi-file-input" accept="image/*" hidden />
+        </div>
+
+        <div class="multi-samples-bar">
+          <span class="sample-label">&#129514; Probar fotos con cartas:</span>
+          <div class="sample-btns-group">
+            <button type="button" class="sample-btn" data-img="/test-images/mesa_madera_3_cartas.jpg">3 cartas en fondo</button>
+            <button type="button" class="sample-btn" data-img="/test-images/tapete_4_cartas.jpg">4 cartas en tapete</button>
+            <button type="button" class="sample-btn" data-img="/test-images/mesa_duelo_5_cartas.jpg">5 cartas en duelo</button>
+          </div>
+        </div>
+
+        <!-- Canvas oculto para capturar frames completos a resolucion nativa -->
+        <canvas id="multi-hidden-canvas" hidden></canvas>
+      </div>
+
+      <!-- Vista previa de la imagen elegida o capturada automaticamente -->
       <div id="preview-box" hidden>
-        <h3>Vista previa</h3>
+        <h3>Captura actual</h3>
         <img id="preview" alt="Vista previa de la carta" />
-        <button id="identify-btn" class="primary">Identificar carta</button>
+        <button id="identify-btn" class="primary" hidden>Reidentificar carta</button>
       </div>
     </section>
 
     <!-- Panel derecho: resultados del back-end -->
     <section class="panel" id="results-panel">
       <h2>2. Resultado</h2>
-      <div id="status" class="status">Eleg&iacute; una imagen para empezar.</div>
+      <div id="status" class="status">Elegí una imagen o activá la cámara para comenzar.</div>
+      
+      <!-- Contenedor para cartas no reconocidas con llamada a la accion -->
+      <div id="unrecognized-box" class="unrecognized-box" hidden>
+        <div class="unrecognized-header">
+          <span>&#9888;</span> Carta no reconocida con certeza
+        </div>
+        <p>Ninguna carta en la galería superó el umbral de similitud. Podés asociar esta foto a una carta existente para promediar su embedding, o agregar una nueva.</p>
+        <div class="unrecognized-actions">
+          <button id="unrec-calibrate-btn" class="action-btn search-btn">&#128269; Buscar y promediar</button>
+          <button id="unrec-add-btn" class="action-btn add-btn">&#x2795; Crear nueva carta</button>
+        </div>
+      </div>
+
       <div id="results"></div>
+
+      <!-- Pie de resultados para corregir o calibrar en cualquier momento -->
+      <div id="results-footer" class="results-footer" hidden>
+        <span>¿No es la carta correcta? </span>
+        <button id="open-calibrate-btn" class="link-btn">Calibrar embedding o registrar carta</button>
+      </div>
     </section>
   </main>
 
+  <!-- Modal de Calibracion y Aprendizaje de Nuevas Cartas -->
+  <div id="calibrate-modal" class="modal-backdrop" hidden>
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>Calibrar o Enseñar Carta</h3>
+        <button id="close-modal-btn" class="modal-close-btn" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Barra con miniatura de la foto actual -->
+        <div class="modal-preview-bar">
+          <img id="modal-thumb" alt="Captura a calibrar" />
+          <div class="modal-preview-info">
+            <span class="tag">Foto Capturada</span>
+            <p>Elegí una carta del sistema para promediar su vector de embedding con esta foto, o creá una nueva carta.</p>
+          </div>
+        </div>
+
+        <!-- Pestañas internas del modal -->
+        <div class="modal-tabs">
+          <button id="modal-tab-search" class="modal-tab active">Promediar con carta existente</button>
+          <button id="modal-tab-create" class="modal-tab">Crear nueva carta</button>
+        </div>
+
+        <!-- Panel 1: Buscar carta existente para promediar -->
+        <div id="modal-panel-search">
+          <div class="search-input-wrap">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" id="card-search-input" placeholder="Buscar por nombre o ID (ej. Dragon, Dark Magician...)" autocomplete="off" />
+            <button id="clear-search-btn" class="clear-btn" hidden>&times;</button>
+          </div>
+          <div id="card-search-results" class="search-results-list">
+            <div class="hint">Escribí para buscar cartas en el sistema...</div>
+          </div>
+        </div>
+
+        <!-- Panel 2: Registrar como nueva carta -->
+        <div id="modal-panel-create" hidden>
+          <div class="form-group" style="margin-bottom: 0.8rem;">
+            <label for="new-card-name">Nombre de la carta:</label>
+            <input type="text" id="new-card-name" placeholder="Ej. Dark Magician of Chaos" />
+          </div>
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label for="new-card-id">ID de la carta (opcional):</label>
+            <input type="text" id="new-card-id" placeholder="Dejar vacío para generar automáticamente" />
+          </div>
+          <button id="submit-new-card-btn" class="primary">Guardar y generar embedding</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast de Notificaciones -->
+  <div id="toast" class="toast" hidden></div>
+
   <footer>
     Trabajo Integrador de Redes Neuronales &mdash;
-    ResNet-18 &rarr; embedding 128-D &rarr; b&uacute;squeda por vecino m&aacute;s cercano
+    ResNet-18 &rarr; embedding 128-D &rarr; B&uacute;squeda métrica &amp; Calibración en vivo
   </footer>
 
   <script src="app.js"></script>

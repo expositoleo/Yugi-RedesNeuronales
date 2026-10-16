@@ -18,3 +18,7 @@ fastapi>=0.110
 uvicorn[standard]>=0.29
 # python-multipart: necesario para que FastAPI reciba archivos (la foto de la carta) via formulario.
 python-multipart>=0.0.9
+
+# --- Vision por Computadora (Deteccion multicarta en camara completa) ---
+# OpenCV: deteccion de contornos cuadrilateros y dewarping (perspectiva) de cartas en mesa.
+opencv-python>=4.8

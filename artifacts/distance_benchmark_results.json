@@ -1,0 +1,56 @@
+[
+  {
+    "Configuracion": "Euclidiana (L2) + Norm L2",
+    "Top-1 (%)": 98.67,
+    "Top-5 (%)": 100.0,
+    "Separabilidad (Imp-Gen)/Imp": 0.3882,
+    "Dist Media Genuina": 0.524,
+    "Dist Media Impostora": 0.8564,
+    "Latencia (ms/query)": 0.139
+  },
+  {
+    "Configuracion": "Coseno (1 - cos) + Norm L2",
+    "Top-1 (%)": 98.67,
+    "Top-5 (%)": 100.0,
+    "Separabilidad (Imp-Gen)/Imp": 0.605,
+    "Dist Media Genuina": 0.1464,
+    "Dist Media Impostora": 0.3706,
+    "Latencia (ms/query)": 0.164
+  },
+  {
+    "Configuracion": "Manhattan (L1) + Norm L2",
+    "Top-1 (%)": 98.67,
+    "Top-5 (%)": 100.0,
+    "Separabilidad (Imp-Gen)/Imp": 0.3858,
+    "Dist Media Genuina": 4.7398,
+    "Dist Media Impostora": 7.717,
+    "Latencia (ms/query)": 0.257
+  },
+  {
+    "Configuracion": "Chebyshev (L-inf) + Norm L2",
+    "Top-1 (%)": 93.33,
+    "Top-5 (%)": 98.0,
+    "Separabilidad (Imp-Gen)/Imp": 0.3245,
+    "Dist Media Genuina": 0.1306,
+    "Dist Media Impostora": 0.1933,
+    "Latencia (ms/query)": 0.334
+  },
+  {
+    "Configuracion": "Euclidiana (L2) SIN Norm L2 (Cruda)",
+    "Top-1 (%)": 94.67,
+    "Top-5 (%)": 99.33,
+    "Separabilidad (Imp-Gen)/Imp": 0.347,
+    "Dist Media Genuina": 2.7712,
+    "Dist Media Impostora": 4.2435,
+    "Latencia (ms/query)": 0.139
+  },
+  {
+    "Configuracion": "Manhattan (L1) SIN Norm L2 (Cruda)",
+    "Top-1 (%)": 94.67,
+    "Top-5 (%)": 98.67,
+    "Separabilidad (Imp-Gen)/Imp": 0.3458,
+    "Dist Media Genuina": 25.0165,
+    "Dist Media Impostora": 38.2388,
+    "Latencia (ms/query)": 0.257
+  }
+]
